@@ -9,7 +9,7 @@ use hound::WavReader;
 use rand::Rng;
 use serde::Deserialize;
 
-fn client_func(file: WavFile, server_address: String, port: u16) -> anyhow::Result<()> {
+fn client_func(config: Config, file: WavFile) -> anyhow::Result<()> {
     let mut reader =
         WavReader::open(&file.path).context(format!("Failed to read file at {:?}", &file.path))?;
     let spec = reader.spec();
@@ -47,14 +47,17 @@ fn client_func(file: WavFile, server_address: String, port: u16) -> anyhow::Resu
         samples
     };
 
-    let mut stream = TcpStream::connect((server_address, port))?;
+    let mut stream = TcpStream::connect((config.server.clone(), config.port))?;
     stream.write_all(b"CONFIG\n")?;
     stream.set_read_timeout(Some(std::time::Duration::from_secs(2)))?;
 
     let mut buf = [0u8; 200];
     let n = stream.read(&mut buf)?;
     let response = std::str::from_utf8(&buf[..n])?;
-    let max_size: usize = response.split_whitespace().next().unwrap_or("0").parse()?;
+    let mut max_size: usize = response.split_whitespace().next().unwrap_or("0").parse()?;
+    if config.max_sample_length > 0 {
+        max_size = max_size.min(fps * config.max_sample_length);
+    }
 
     let total_samples = samples.len();
 
@@ -82,6 +85,11 @@ fn client_func(file: WavFile, server_address: String, port: u16) -> anyhow::Resu
             }
         }
 
+        // Sleep delay
+        let delay = config.sample_delay;
+        //delay += rng.random_range(0..1000);
+        std::thread::sleep(Duration::from_millis(delay as u64));
+
         counter += 1;
     }
 }
@@ -89,14 +97,13 @@ fn client_func(file: WavFile, server_address: String, port: u16) -> anyhow::Resu
 fn main() -> anyhow::Result<()> {
     let config: Config = serde_yaml::from_reader(File::open("config.yml")?)?;
 
-    for file in config.files {
-        let server = config.server.clone();
-        let port = config.port;
+    for file in config.files.clone() {
+        let config = config.clone();
         let file_clone = file.clone();
 
         std::thread::spawn(move || {
             let error = format!("Failed for {:?}", &file_clone.path);
-            client_func(file_clone, server, port).expect(&error);
+            client_func(config, file_clone).expect(&error);
         });
     }
 
@@ -106,9 +113,13 @@ fn main() -> anyhow::Result<()> {
 
 #[derive(Clone, Debug, Deserialize)]
 struct Config {
-    files: Vec<WavFile>,
     server: String,
     port: u16,
+    #[serde(default)]
+    max_sample_length: usize,
+    #[serde(default)]
+    sample_delay: usize,
+    files: Vec<WavFile>,
 }
 
 #[derive(Clone, Debug, Deserialize)]

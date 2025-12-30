@@ -16,6 +16,11 @@ Multi-threaded maximum-blasting sampleflood client for the [sampleflood](samplef
 server: "sampleflut.de"
 # Server Port
 port: 8080
+# The maximum length of a selected sample chunk in seconds (unlimited if ommited)
+# If a long length is selected, the sample length will be limited by the server.
+max_sample_length: 8
+# The median delay per sample
+sample_delay: 1000
 # A list of wav files you want to play
 files:
     # The path to the wav file
