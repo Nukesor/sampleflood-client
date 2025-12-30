@@ -67,22 +67,15 @@ fn client_func(config: Config, file: WavFile) -> anyhow::Result<()> {
     loop {
         println!("Sending sample for {:?}: {counter}", &file.path);
 
-        if total_samples <= max_size {
-            // Send all samples if fewer than max_size
-            for (position, sample) in samples.iter().enumerate() {
-                let value = *sample as f32 / 32768.0 * file.volume_adjustment;
-                let message = format!("SMPL {} {:.7}\n", position, value);
-                stream.write_all(message.as_bytes())?;
+        for (position, sample) in samples.iter().enumerate() {
+            // Only send as many packets as we're allowed to
+            if position >= max_size {
+                break;
             }
-        } else {
-            // Pick random start index, while making sure that the chunk fits into the remaining
-            // sample.
-            let start = rng.random_range(0..=total_samples - max_size);
-            for (offset, sample) in samples.iter().skip(start).take(max_size).enumerate() {
-                let value = *sample as f32 / 32768.0 * file.volume_adjustment;
-                let message = format!("SMPL {} {:.7}\n", offset, value);
-                stream.write_all(message.as_bytes())?;
-            }
+
+            let value = *sample as f32 / 32768.0 * file.volume_adjustment;
+            let message = format!("SMPL {} {:.7}\n", position, value);
+            stream.write_all(message.as_bytes())?;
         }
 
         // Sleep delay
