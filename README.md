@@ -1,6 +1,6 @@
 # Sampleflood client
 
-Multi-threaded maximum-blasting sampleflood client for the [sampleflood.de] client.
+Multi-threaded maximum-blasting sampleflood client for the [sampleflood](sampleflood.de) project.
 
 ## How to
 
