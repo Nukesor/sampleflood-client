@@ -1,0 +1,22 @@
+port: 8080
+server: "sampleflut.de"
+files:
+  - path: ./tracks/crazy.wav
+    start_offset: 40
+    volume_adjustment: 0.4
+  - path: ./tracks/duck_song.wav
+    start_offset: 20
+  - path: ./tracks/heya.wav
+    start_offset: 40
+  - path: ./tracks/kacke.wav
+    start_offset: 120
+  - path: ./tracks/kohle.wav
+    start_offset: 20
+  - path: ./tracks/never_gonna.wav
+    start_offset: 60
+  - path: ./tracks/Tric_City.wav
+    start_offset: 60
+    volume_adjustment: 0.8
+  - path: ./tracks/yipee.wav
+    start_offset: 5
+    volume_adjustment: 0.8
