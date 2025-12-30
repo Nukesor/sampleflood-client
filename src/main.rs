@@ -4,11 +4,13 @@ use std::net::TcpStream;
 use std::path::PathBuf;
 use std::time::Duration;
 
+use anyhow::Context;
 use hound::WavReader;
 use serde::Deserialize;
 
 fn client_func(file: WavFile, server_address: String, port: u16) -> anyhow::Result<()> {
-    let mut reader = WavReader::open(&file.path)?;
+    let mut reader =
+        WavReader::open(&file.path).context(format!("Failed to read file at {:?}", &file.path))?;
     let spec = reader.spec();
     let fps = spec.sample_rate as usize;
     let total_frames = reader.duration() as usize;
