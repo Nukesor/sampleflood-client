@@ -86,8 +86,8 @@ fn client_func(config: Config, file: WavFile) -> anyhow::Result<()> {
         }
 
         // Sleep delay
-        let delay = config.sample_delay;
-        //delay += rng.random_range(0..1000);
+        let mut delay = config.sample_delay;
+        delay += rng.random_range(0..2000);
         std::thread::sleep(Duration::from_millis(delay as u64));
 
         counter += 1;
