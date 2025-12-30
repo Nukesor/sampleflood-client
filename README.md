@@ -11,7 +11,7 @@ Multi-threaded maximum-blasting sampleflood client for the [sampleflood.de] clie
 
 ## Config
 
-```
+```yaml
 # Server address
 server: "sampleflut.de"
 # Server Port
@@ -20,9 +20,11 @@ port: 8080
 files:
     # The path to the wav file
   - path: ./tracks/crazy.wav
-    # Offset of 40 seconds before taking samples
+    # Offset of 40 seconds before taking samples.  (0 if ommitted)
     start_offset: 40
-    # A percentual volume adjustment (40%)
+    # Offset in seconds that're skipped at sample end. (0 if ommitted)
+    end_offset: usize,
+    # A percentual volume adjustment (40%).  (1.0 - neutral if ommitted)
     volume_adjustment: 0.4
   - path: ./tracks/duck_song.wav
 ```

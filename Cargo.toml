@@ -8,3 +8,4 @@ hound = "3.4"
 anyhow = "1.0"
 serde = { version = "1.0", features = ["derive"] }
 serde_yaml = "0.9"
+rand = "0.9"

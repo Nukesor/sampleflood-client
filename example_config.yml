@@ -12,10 +12,13 @@ files:
     start_offset: 120
   - path: ./tracks/kohle.wav
     start_offset: 20
+    end_offset: 10
   - path: ./tracks/never_gonna.wav
     start_offset: 60
+    end_offset: 20
   - path: ./tracks/Tric_City.wav
     start_offset: 60
+    end_offset: 20
     volume_adjustment: 0.8
   - path: ./tracks/yipee.wav
     start_offset: 5

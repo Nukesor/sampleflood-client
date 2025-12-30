@@ -6,6 +6,7 @@ use std::time::Duration;
 
 use anyhow::Context;
 use hound::WavReader;
+use rand::Rng;
 use serde::Deserialize;
 
 fn client_func(file: WavFile, server_address: String, port: u16) -> anyhow::Result<()> {
@@ -23,9 +24,11 @@ fn client_func(file: WavFile, server_address: String, port: u16) -> anyhow::Resu
     reader.seek(frame_index as u32)?;
 
     // Read samples into Vec<i16>
+    let end_frame = total_frames.saturating_sub(file.end_offset * fps);
+    let take_frames = end_frame.saturating_sub(frame_index);
     let samples: Vec<i16> = reader
         .samples::<i16>()
-        .take(total_frames - frame_index)
+        .take(take_frames)
         .collect::<Result<_, _>>()?;
 
     // If stereo, average channels
@@ -53,20 +56,32 @@ fn client_func(file: WavFile, server_address: String, port: u16) -> anyhow::Resu
     let response = std::str::from_utf8(&buf[..n])?;
     let max_size: usize = response.split_whitespace().next().unwrap_or("0").parse()?;
 
+    let total_samples = samples.len();
+
+    let mut rng = rand::rng();
+
     let mut counter = 1;
     loop {
         println!("Sending sample for {:?}: {counter}", &file.path);
-        for (position, sample) in samples.iter().enumerate() {
-            // Only send as many packets as we're allowed to
-            if position >= max_size {
-                break;
-            }
 
-            let value = *sample as f32 / 32768.0 * file.volume_adjustment;
-            let message = format!("SMPL {} {:.7}\n", position, value);
-            stream.write_all(message.as_bytes())?;
+        if total_samples <= max_size {
+            // Send all samples if fewer than max_size
+            for (position, sample) in samples.iter().enumerate() {
+                let value = *sample as f32 / 32768.0 * file.volume_adjustment;
+                let message = format!("SMPL {} {:.7}\n", position, value);
+                stream.write_all(message.as_bytes())?;
+            }
+        } else {
+            // Pick random start index, while making sure that the chunk fits into the remaining
+            // sample.
+            let start = rng.random_range(0..=total_samples - max_size);
+            for (offset, sample) in samples.iter().skip(start).take(max_size).enumerate() {
+                let value = *sample as f32 / 32768.0 * file.volume_adjustment;
+                let message = format!("SMPL {} {:.7}\n", offset, value);
+                stream.write_all(message.as_bytes())?;
+            }
         }
-        std::thread::sleep(Duration::from_millis(1000));
+
         counter += 1;
     }
 }
@@ -99,8 +114,14 @@ struct Config {
 #[derive(Clone, Debug, Deserialize)]
 struct WavFile {
     path: PathBuf,
+    // Offset in seconds that're skipped at sample start.
     #[serde(default)]
     start_offset: usize,
+
+    // Offset in seconds that're skipped at sample end.
+    #[serde(default)]
+    end_offset: usize,
+
     // Percentage volume assignment
     #[serde(default = "default_adjustment")]
     volume_adjustment: f32,
